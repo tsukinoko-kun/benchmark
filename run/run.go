@@ -34,6 +34,22 @@ func randomString(n int) string {
 	return string(b)
 }
 
+func init() {
+	go func() {
+		cmd := exec.Command("docker", "pull", "amazoncorretto:22-alpine-jdk")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			panic(errors.Join(errors.New("failed to pull Docker image"), errors.New(string(out)), err))
+		}
+	}()
+
+	go func() {
+		cmd := exec.Command("docker", "pull", "golang:alpine")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			panic(errors.Join(errors.New("failed to pull Docker image"), errors.New(string(out)), err))
+		}
+	}()
+}
+
 var (
 	goDockerfile = []byte(`FROM golang:alpine
 RUN apk add --no-cache hyperfine
