@@ -56,8 +56,10 @@ RUN apk add --no-cache hyperfine
 COPY . /app
 WORKDIR /app
 RUN go mod init github.com/tsukinoko-kun/benchmark
-RUN go build -v -o main main.go
-CMD /app/main \
+RUN go mod tidy
+CMD go build -v -o main main.go \
+	&& /app/main \
+	&& echo "---" \
 	&& hyperfine "/app/main" -i --warmup 8 -N 2> /dev/null \
 `)
 
@@ -65,8 +67,8 @@ CMD /app/main \
 RUN apk add --no-cache hyperfine
 COPY . /app
 WORKDIR /app
-RUN java Main.java
 CMD java Main.java \
+	&& echo "---" \
 	&& hyperfine "java Main.java" -i --warmup 4 -N 2> /dev/null \
 	&& java -XX:StartFlightRecording:filename=recording.jfr -XX:FlightRecorderOptions:stackdepth=256 -XX:StartFlightRecording:method-profiling=max Main.java > /dev/null \
 	&& jfr view allocation-by-class recording.jfr \
@@ -102,7 +104,7 @@ func runJava(code []byte) ([]byte, error) {
 	cmd := exec.Command("docker", "build", "-t", id, ".")
 	cmd.Dir = projDir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return out, errors.Join(errors.New("failed to build Docker image"), err)
+		return out, errors.Join(errors.New("failed to build Docker image"), errors.New(string(out)), err)
 	}
 
 	// Run the Docker container
