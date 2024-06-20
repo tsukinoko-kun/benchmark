@@ -72,6 +72,6 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/submit", submitHandler)
 	if err := http.ListenAndServe(":80", nil); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 }
