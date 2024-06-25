@@ -60,22 +60,39 @@ const indexHtml = `<!DOCTYPE html>
 							}));
 						});
 						ws.addEventListener('message', function(event) {
-							const data = JSON.parse(event.data);
-							console.log(data);
-							if (data.error) {
-								outputEl.textContent = data.error;
-								outputEl.classList.add('error');
-							} else {
-								outputEl.textContent = data.output;
-								outputEl.classList.remove('error');
+							try {
+								const data = JSON.parse(event.data);
+								console.log(data);
+								if (data.error) {
+									outputEl.textContent = data.error;
+									outputEl.classList.add('error');
+								} else {
+									outputEl.textContent = data.output;
+									outputEl.classList.remove('error');
+								}
+							} finally {
+								ws.close();
 							}
 						});
 						ws.addEventListener('error', function(ev) {
-							outputEl.textContent = "WebSocket error occurred";
-							if (ev.message) {
-								outputEl.textContent += ": " + ev.message;
+							try {
+								outputEl.textContent = "WebSocket error occurred";
+								if (ev.message) {
+									outputEl.textContent += ": " + ev.message;
+								}
+								outputEl.classList.add('error');
+							} finally {
+								ws.close();
 							}
-							outputEl.classList.add('error');
+						});
+						ws.addEventListener('close', function(ev) {
+							if (outputEl.textContent === 'Running...') {
+								outputEl.textContent = "WebSocket connection closed unexpectedly";
+								if (ev.reason) {
+									outputEl.textContent += ": " + ev.reason;
+								}
+								outputEl.classList.add('error');
+							}
 						});
 					};
 					reader.onerror = function() {
@@ -100,7 +117,8 @@ const indexHtml = `<!DOCTYPE html>
 	</body>
 </html>`
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprint(w, indexHtml)
 }
 

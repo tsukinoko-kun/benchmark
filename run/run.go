@@ -13,7 +13,7 @@ import (
 
 const (
 	timeout = 30 * time.Second
-	maxOut  = 1024
+	maxOut  = 1024 * 4
 )
 
 func Run(code []byte, language string) ([]byte, error) {
