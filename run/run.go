@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-const timeout = 30 * time.Second
+const (
+	timeout = 30 * time.Second
+	maxOut  = 1024
+)
 
 func Run(code []byte, language string) ([]byte, error) {
 	// use context to abort the process if it takes too long
@@ -134,6 +137,12 @@ func runJava(ctx context.Context, code []byte) ([]byte, error) {
 	// Run the Docker container
 	cmd = exec.CommandContext(ctx, "docker", "run", id)
 	out, err := cmd.CombinedOutput()
+
+	// Truncate the output
+	if out != nil && len(out) > maxOut {
+		out = out[:maxOut]
+	}
+
 	if err != nil {
 		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
 	}
@@ -183,6 +192,12 @@ func runGo(ctx context.Context, code []byte) ([]byte, error) {
 	// Run the Docker container
 	cmd = exec.CommandContext(ctx, "docker", "run", id)
 	out, err := cmd.CombinedOutput()
+
+	// Truncate the output
+	if out != nil && len(out) > maxOut {
+		out = out[:maxOut]
+	}
+
 	if err != nil {
 		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
 	}
