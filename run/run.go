@@ -1,6 +1,7 @@
 package run
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -10,15 +11,30 @@ import (
 	"time"
 )
 
+const timeout = 30 * time.Second
+
 func Run(code []byte, language string) ([]byte, error) {
+	// use context to abort the process if it takes too long
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var output []byte
+	var err error
+
 	switch language {
 	case "java":
-		return runJava(code)
+		output, err = runJava(ctx, code)
 	case "go":
-		return runGo(code)
+		output, err = runGo(ctx, code)
 	default:
 		return nil, fmt.Errorf("unsupported language: %s", language)
 	}
+
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
+		return output, errors.Join(fmt.Errorf("execution timed out after %s", timeout), errors.New(string(output)))
+	}
+
+	return output, err
 }
 
 func projectId() string {
@@ -76,7 +92,7 @@ CMD java Main.java \
 `)
 )
 
-func runJava(code []byte) ([]byte, error) {
+func runJava(ctx context.Context, code []byte) ([]byte, error) {
 	id := "java-" + projectId()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -101,29 +117,31 @@ func runJava(code []byte) ([]byte, error) {
 	}
 
 	// Build the Docker image
-	cmd := exec.Command("docker", "build", "-t", id, ".")
+	cmd := exec.CommandContext(ctx, "docker", "build", "-t", id, ".")
 	cmd.Dir = projDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return out, errors.Join(errors.New("failed to build Docker image"), errors.New(string(out)), err)
 	}
 
+	defer func() {
+		// Remove the Docker image
+		cmd := exec.Command("docker", "rmi", id)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			fmt.Println(errors.Join(errors.New("failed to remove Docker image"), errors.New(string(out)), err))
+		}
+	}()
+
 	// Run the Docker container
-	cmd = exec.Command("docker", "run", "--rm", id)
+	cmd = exec.CommandContext(ctx, "docker", "run", id)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
 	}
 
-	// Delete the Docker image
-	cmd = exec.Command("docker", "rmi", id)
-	if outRmi, err := cmd.CombinedOutput(); err != nil {
-		return out, errors.Join(errors.New("failed to delete Docker image"), errors.New(string(outRmi)), err)
-	}
-
 	return out, nil
 }
 
-func runGo(code []byte) ([]byte, error) {
+func runGo(ctx context.Context, code []byte) ([]byte, error) {
 	id := "go-" + projectId()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -148,23 +166,25 @@ func runGo(code []byte) ([]byte, error) {
 	}
 
 	// Build the Docker image
-	cmd := exec.Command("docker", "build", "-t", id, ".")
+	cmd := exec.CommandContext(ctx, "docker", "build", "-t", id, ".")
 	cmd.Dir = projDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return out, errors.Join(errors.New("failed to build Docker image"), err)
 	}
 
+	defer func() {
+		// Remove the Docker image
+		cmd := exec.Command("docker", "rmi", id)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			fmt.Println(errors.Join(errors.New("failed to remove Docker image"), errors.New(string(out)), err))
+		}
+	}()
+
 	// Run the Docker container
-	cmd = exec.Command("docker", "run", "--rm", id)
+	cmd = exec.CommandContext(ctx, "docker", "run", id)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
-	}
-
-	// Delete the Docker image
-	cmd = exec.Command("docker", "rmi", id)
-	if outRmi, err := cmd.CombinedOutput(); err != nil {
-		return out, errors.Join(errors.New("failed to delete Docker image"), errors.New(string(outRmi)), err)
 	}
 
 	return out, nil
