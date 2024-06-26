@@ -206,7 +206,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/ws", wsHandler)
-	if err := http.ListenAndServe(":80", nil); err != nil {
+	addr, ok := os.LookupEnv("ADDR")
+	if !ok {
+		addr = ":8080"
+	}
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 }
