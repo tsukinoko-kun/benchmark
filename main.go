@@ -58,7 +58,7 @@ const indexHtml = `<!DOCTYPE html>
 					const reader = new FileReader();
 					reader.onload = function() {
 						try {
-							const ws = new WebSocket(location.protocol === 'https:' ? 'wss://' : 'ws://' + window.location.host + '/ws');
+							const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws');
 							ws.addEventListener('open', function() {
 								ws.send(JSON.stringify({
 									code: reader.result,
