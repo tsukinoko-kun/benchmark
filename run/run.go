@@ -139,7 +139,7 @@ func runJava(ctx context.Context, code []byte) ([]byte, error) {
 	out, err := cmd.CombinedOutput()
 
 	// Truncate the output
-	if out != nil && len(out) > maxOut {
+	if len(out) > maxOut {
 		out = out[:maxOut]
 	}
 
