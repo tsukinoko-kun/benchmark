@@ -57,48 +57,53 @@ const indexHtml = `<!DOCTYPE html>
 
 					const reader = new FileReader();
 					reader.onload = function() {
-						const ws = new WebSocket('ws://' + window.location.host + '/ws');
-						ws.addEventListener('open', function() {
-							ws.send(JSON.stringify({
-								code: reader.result,
-								language,
-							}));
-						});
-						ws.addEventListener('message', function(event) {
-							try {
-								const data = JSON.parse(event.data);
-								console.log(data);
-								if (data.error) {
-									outputEl.textContent = data.error;
+						try {
+							const ws = new WebSocket(location.protocol === 'https:' ? 'wss://' : 'ws://' + window.location.host + '/ws');
+							ws.addEventListener('open', function() {
+								ws.send(JSON.stringify({
+									code: reader.result,
+									language,
+								}));
+							});
+							ws.addEventListener('message', function(event) {
+								try {
+									const data = JSON.parse(event.data);
+									console.log(data);
+									if (data.error) {
+										outputEl.textContent = data.error;
+										outputEl.classList.add('error');
+									} else {
+										outputEl.textContent = data.output;
+										outputEl.classList.remove('error');
+									}
+								} finally {
+									ws.close();
+								}
+							});
+							ws.addEventListener('error', function(ev) {
+								try {
+									outputEl.textContent = "WebSocket error occurred";
+									if (ev.message) {
+										outputEl.textContent += ": " + ev.message;
+									}
 									outputEl.classList.add('error');
-								} else {
-									outputEl.textContent = data.output;
-									outputEl.classList.remove('error');
+								} finally {
+									ws.close();
 								}
-							} finally {
-								ws.close();
-							}
-						});
-						ws.addEventListener('error', function(ev) {
-							try {
-								outputEl.textContent = "WebSocket error occurred";
-								if (ev.message) {
-									outputEl.textContent += ": " + ev.message;
+							});
+							ws.addEventListener('close', function(ev) {
+								if (outputEl.textContent === 'Running...') {
+									outputEl.textContent = "WebSocket connection closed unexpectedly";
+									if (ev.reason) {
+										outputEl.textContent += ": " + ev.reason;
+									}
+									outputEl.classList.add('error');
 								}
-								outputEl.classList.add('error');
-							} finally {
-								ws.close();
-							}
-						});
-						ws.addEventListener('close', function(ev) {
-							if (outputEl.textContent === 'Running...') {
-								outputEl.textContent = "WebSocket connection closed unexpectedly";
-								if (ev.reason) {
-									outputEl.textContent += ": " + ev.reason;
-								}
-								outputEl.classList.add('error');
-							}
-						});
+							});
+						} catch (error) {
+							outputEl.textContent = error.message;
+							outputEl.classList.add('error');
+						}
 					};
 					reader.onerror = function() {
 						outputEl.textContent = 'Failed to read the file';
