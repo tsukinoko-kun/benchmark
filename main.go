@@ -32,11 +32,6 @@ const indexHtml = `<!DOCTYPE html>
 		<button onclick="submit()">Submit</button>
 		<br>
 		<pre><code id="output">Select a language and a file, then click Submit.</code></pre>
-		<footer>
-			<a href="https://github.com/tsukinoko-kun/benchmark" target="_blank" rel="noopener noreferrer">
-				Source code of this application on GitHub
-			</a>
-		</footer>
 		<script>
 			const sourceEl = document.getElementById('source');
 			const languageEl = document.getElementById('language');
