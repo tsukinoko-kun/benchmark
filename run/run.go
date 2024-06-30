@@ -123,14 +123,14 @@ func runJava(ctx context.Context, code []byte) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "docker", "build", "-t", id, ".")
 	cmd.Dir = projDir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return out, errors.Join(errors.New("failed to build Docker image"), errors.New(string(out)), err)
+		return out, errors.Join(errors.New("failed to build"), errors.New(string(out)), err)
 	}
 
 	defer func() {
 		// Remove the Docker image
 		cmd := exec.Command("docker", "rmi", id)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			fmt.Println(errors.Join(errors.New("failed to remove Docker image"), errors.New(string(out)), err))
+			fmt.Println(errors.Join(errors.New("failed to clean up"), errors.New(string(out)), err))
 		}
 	}()
 
@@ -144,7 +144,7 @@ func runJava(ctx context.Context, code []byte) ([]byte, error) {
 	}
 
 	if err != nil {
-		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
+		return out, errors.Join(errors.New("failed to run"), errors.New(string(out)), err)
 	}
 
 	return out, nil
@@ -178,14 +178,14 @@ func runGo(ctx context.Context, code []byte) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, "docker", "build", "-t", id, ".")
 	cmd.Dir = projDir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return out, errors.Join(errors.New("failed to build Docker image"), err)
+		return out, errors.Join(errors.New("failed to build"), err)
 	}
 
 	defer func() {
 		// Remove the Docker image
 		cmd := exec.Command("docker", "rmi", id)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			fmt.Println(errors.Join(errors.New("failed to remove Docker image"), errors.New(string(out)), err))
+			fmt.Println(errors.Join(errors.New("failed to clean up"), errors.New(string(out)), err))
 		}
 	}()
 
@@ -194,12 +194,12 @@ func runGo(ctx context.Context, code []byte) ([]byte, error) {
 	out, err := cmd.CombinedOutput()
 
 	// Truncate the output
-	if out != nil && len(out) > maxOut {
+	if len(out) > maxOut {
 		out = out[:maxOut]
 	}
 
 	if err != nil {
-		return out, errors.Join(errors.New("failed to run Docker container"), errors.New(string(out)), err)
+		return out, errors.Join(errors.New("failed to run"), errors.New(string(out)), err)
 	}
 
 	return out, nil
