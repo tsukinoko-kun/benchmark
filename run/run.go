@@ -62,7 +62,7 @@ func init() {
 	}()
 
 	go func() {
-		cmd := exec.Command("docker", "pull", "golang:alpine")
+		cmd := exec.Command("docker", "pull", "golang:1.22.4-alpine")
 		if out, err := cmd.CombinedOutput(); err != nil {
 			panic(errors.Join(errors.New("failed to pull Docker image"), errors.New(string(out)), err))
 		}
@@ -70,7 +70,7 @@ func init() {
 }
 
 var (
-	goDockerfile = []byte(`FROM golang:alpine
+	goDockerfile = []byte(`FROM golang:1.22.4-alpine
 RUN apk add --no-cache hyperfine
 COPY . /app
 WORKDIR /app
