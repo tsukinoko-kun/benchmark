@@ -24,8 +24,8 @@ const indexHtml = `<!DOCTYPE html>
 	<body>
 		<h1>Benchmark</h1>
 		<select id="language" required onchange="document.getElementById('source').accept = '.' + this.value">
-			<option value="java" selected>Java</option>
-			<option value="go">Go</option>
+			<option value="java" selected>Java 22</option>
+			<option value="go">Go 1.22.4</option>
 		</select>
 		<input id="source" type="file" required accept=".java">
 		<br>
